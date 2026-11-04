@@ -27,9 +27,12 @@ Repo → **Settings → Pages → Source = `GitHub Actions`** set kiya gaya. Usk
 | --- | --- |
 | `GET /` instance info | ✅ Cobalt **v11.7.1**, **21 services** |
 | `Access-Control-Allow-Origin` | ✅ `*` — browser kisi bhi origin se seedha call kar sakta hai, relay ki zarurat nahi |
-| `POST /` processing endpoint | ✅ HTTP 400 with valid Cobalt JSON `{"status":"error","code":"error.api.link.invalid"}` (invalid test link ke liye expected response) — endpoint zinda aur sahi format de raha hai |
+| `POST /` processing endpoint | ✅ valid Cobalt JSON (`error.api.link.invalid` invalid test link par expected) |
+| Real download — Vimeo | ✅ HTTP 200, `status: redirect`, filename `The New Vimeo Player (You Know, For Videos) - Vimeo (360p).mp4` + asli file URL |
+| Browser se live site | ✅ `https://sanjeettiwari1299-eng.github.io/youtyers/` khul kar khud instance se v11.7.1 / 21 services load karta hai |
+| YouTube | ⚠️ is instance par `error.api.fetch.fail` — Cobalt instance ko YouTube ke liye cookies / session server chahiye (site ka code nahi, instance-side baat hai) |
 
-Matlab download pipeline reachable hai; bas sahi video link daalne par `tunnel` / `redirect` / `picker` response aayega aur file download ho jayegi.
+Matlab download pipeline kaam kar raha hai (Vimeo se proof). YouTube ke liye ya to instance mein `cookies.json` / `YOUTUBE_SESSION_SERVER` configure karo, ya site ke ⚙️ Settings mein kisi doosre Cobalt instance ka URL daal do — UI bilkul same chalega.
 
 ## Local chalana
 

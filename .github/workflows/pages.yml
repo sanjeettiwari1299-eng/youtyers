@@ -68,15 +68,24 @@ jobs:
             code=$(curl -sS --max-time 60 -X POST "$COBALT_API" \
               -H 'Accept: application/json' -H 'Content-Type: application/json' \
               -d "$body" -o /tmp/probe.json -w '%{http_code}')
-            local parsed
+            local parsed fileurl bytes
             parsed=$(python3 -c "
-          import json,sys
+          import json
           try:
               d=json.load(open('/tmp/probe.json'))
-              print(d.get('status'), '|', (d.get('error') or {}).get('code','-'), '|', d.get('filename','-'), '|', d.get('url','')[:80])
-          except Exception as e: print('parse-error |',e,'| - | -')
+              print(d.get('status'), '|', (d.get('error') or {}).get('code','-'), '|', d.get('filename','-'))
+          except Exception as e: print('parse-error |',e,'| -')
           ")
-            echo "::notice title=Download probe: $label::HTTP $code :: $parsed"
+            fileurl=$(python3 -c "
+          import json
+          try: print(json.load(open('/tmp/probe.json')).get('url') or '')
+          except Exception: print('')
+          ")
+            bytes='-'
+            if [ -n "$fileurl" ]; then
+              bytes=$(curl -sS -L --max-time 45 -r 0-2047 -o /tmp/chunk.bin -w 'HTTP %{http_code}, %{size_download} bytes' "$fileurl" 2>/dev/null || echo 'stream failed')
+            fi
+            echo "::notice title=Download probe: $label::HTTP $code :: $parsed :: file bytes: $bytes"
           }
           probe "YouTube 360p h264"  '{"url":"https://www.youtube.com/watch?v=jNQXAC9IVRw","videoQuality":"360","downloadMode":"mute","youtubeVideoCodec":"h264"}'
           probe "YouTube 144p vp9 proxy" '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","videoQuality":"144","youtubeVideoCodec":"vp9","alwaysProxy":true}'
