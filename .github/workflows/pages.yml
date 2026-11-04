@@ -92,6 +92,7 @@ jobs:
           probe "YouTube 360p h264"  '{"url":"https://www.youtube.com/watch?v=jNQXAC9IVRw","videoQuality":"360","downloadMode":"mute","youtubeVideoCodec":"h264"}'
           probe "YouTube 144p vp9 proxy" '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","videoQuality":"144","youtubeVideoCodec":"vp9","alwaysProxy":true}'
           probe "Vimeo"            '{"url":"https://vimeo.com/76979871","videoQuality":"360"}'
+          probe "Vimeo via cobalt tunnel" '{"url":"https://vimeo.com/76979871","videoQuality":"360","alwaysProxy":true}'
           probe "SoundCloud audio" '{"url":"https://soundcloud.com/odesza/say-my-name-feat-zyra","downloadMode":"audio","audioFormat":"mp3"}'
           probe "Dailymotion"      '{"url":"https://www.dailymotion.com/video/x7tgah0","videoQuality":"360"}'
           echo "" >> "$GITHUB_STEP_SUMMARY"
