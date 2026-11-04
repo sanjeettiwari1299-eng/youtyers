@@ -1,4 +1,9 @@
 # Secrets / local config - never commit
 .env
+cookies.txt
 cookies.json
 keys.json
+
+# Downloads and caches
+downloads/
+__pycache__/

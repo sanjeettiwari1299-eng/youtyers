@@ -1,19 +1,17 @@
 services:
-  cobalt:
-    image: ghcr.io/imputnet/cobalt:latest
-    container_name: cobalt
+  downloader:
+    build: .
+    image: youtyers:latest
+    container_name: youtyers
     init: true
-    read_only: true
     # Auto-start after reboot / sleep-wake / Docker restart.
-    # Without this, the container stays stopped and the site "stops working".
     restart: unless-stopped
     ports:
-      - "${COBALT_PORT:-9000}:9000"
+      - "${PORT:-9000}:9000"
     environment:
-      # Must be the URL your browser / frontend uses to reach this API.
-      API_URL: "${API_URL:-http://localhost:9000/}"
-      API_PORT: 9000
-      # YouTube fix (optional): uncomment after creating cookies.json (see README).
-      # COOKIE_PATH: /cookies.json
+      # Set a key to protect the API (recommended if reachable from outside)
+      API_KEY: "${API_KEY:-}"
+      # Optional YouTube cookies. Set to /cookies.txt AND uncomment the volume below.
+      COOKIE_FILE: "${COOKIE_FILE:-}"
     # volumes:
-    #   - ./cookies.json:/cookies.json:ro
+    #   - ./cookies.txt:/cookies.txt:ro
