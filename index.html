@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Youtyers — Video Downloader (Cobalt)</title>
+<meta name="description" content="Apna video downloader — YouTube, Instagram, TikTok aur 20+ sites se Cobalt ke through video / audio download karo.">
+<style>
+:root{
+  --bg:#070a14; --card:rgba(19,24,42,.72); --line:rgba(255,255,255,.09);
+  --txt:#eef1ff; --muted:#9aa3c4; --violet:#8b5cf6; --cyan:#22d3ee;
+  --pink:#f472b6; --good:#34d399; --bad:#fb7185; --radius:20px;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
+.bg{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.bg::before,.bg::after{content:"";position:absolute;border-radius:50%;filter:blur(90px);opacity:.42}
+.bg::before{width:560px;height:560px;left:-140px;top:-180px;background:radial-gradient(circle,#6d28d9,transparent 70%)}
+.bg::after{width:620px;height:620px;right:-180px;top:60px;background:radial-gradient(circle,#0891b2,transparent 70%)}
+.bg .orb3{position:absolute;width:480px;height:480px;left:45%;bottom:-300px;background:radial-gradient(circle,#db2777,transparent 70%);border-radius:50%;filter:blur(100px);opacity:.25}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px 0}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--txt);font-weight:800;font-size:20px;letter-spacing:-.4px}
+.logo{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--violet),var(--cyan));font-size:17px;box-shadow:0 8px 26px rgba(139,92,246,.4)}
+.brand small{display:block;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:1.6px;text-transform:uppercase;margin-top:-2px}
+.top-actions{display:flex;align-items:center;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);padding:8px 13px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.pill.ok{color:#bbf7d0;border-color:rgba(52,211,153,.35)}.pill.ok .dot{background:var(--good);box-shadow:0 0 10px var(--good)}
+.pill.warn{color:#fecdd3;border-color:rgba(251,113,133,.35)}.pill.warn .dot{background:var(--bad)}
+.pill.load .dot{background:#fbbf24;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.icon-btn{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font-size:17px;cursor:pointer;transition:.2s}
+.icon-btn:hover{background:rgba(255,255,255,.12)}
+.hero{text-align:center;padding:34px 0 30px}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:999px;border:1px solid rgba(139,92,246,.35);background:rgba(139,92,246,.11);color:#c4b5fd;font-size:12px;font-weight:700;letter-spacing:.3px}
+h1{font-size:clamp(30px,6vw,52px);line-height:1.12;margin:20px 0 12px;letter-spacing:-1.8px;font-weight:850}
+h1 span{background:linear-gradient(90deg,#a78bfa,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--muted);font-size:15px;line-height:1.7;max-width:620px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;backdrop-filter:blur(18px);box-shadow:0 20px 60px rgba(0,0,0,.28);margin-bottom:18px}
+label.tiny{display:block;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:9px}
+.input-row{display:flex;gap:9px;flex-wrap:wrap}
+#urlInput{flex:1 1 320px;min-width:0;background:rgba(5,8,18,.65);border:1px solid var(--line);border-radius:13px;padding:15px 16px;color:var(--txt);font-size:15px;font-family:var(--font);outline:none;transition:.2s}
+#urlInput:focus{border-color:rgba(139,92,246,.8);box-shadow:0 0 0 4px rgba(139,92,246,.14)}
+#urlInput::placeholder{color:#5c6486}
+button,a.btn{font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;border-radius:13px;transition:.2s;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.primary-btn{padding:15px 24px;border:0;color:#fff;background:linear-gradient(120deg,#7c3aed,#2563eb 55%,#0891b2);box-shadow:0 10px 30px rgba(124,58,237,.35)}
+.primary-btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.primary-btn:disabled{opacity:.6;cursor:wait;transform:none;filter:none}
+.ghost-btn{padding:13px 16px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--txt)}
+.ghost-btn:hover{background:rgba(255,255,255,.12)}
+.examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.examples span{font-size:12px;color:var(--muted)}
+.chip{border:1px solid var(--line);background:rgba(255,255,255,.04);color:#cbd5f5;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:.2s}
+.chip:hover{border-color:var(--violet);color:#fff}
+.options{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px;padding-top:22px;border-top:1px solid var(--line)}
+.opt label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.opt select,.opt input,.field input{width:100%;background:rgba(5,8,18,.65);border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:11px 12px;font-size:13px;font-family:var(--font);outline:none}
+.opt select:focus,.opt input:focus,.field input:focus{border-color:var(--violet)}
+.toggles{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px}
+.check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);cursor:pointer}
+.check input{accent-color:var(--violet);width:15px;height:15px}
+.hidden{display:none!important}
+.progress{display:flex;align-items:center;gap:16px}
+.spinner{width:30px;height:30px;border:3px solid rgba(255,255,255,.12);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress h3{margin:0 0 3px;font-size:15px}.progress p{margin:0;font-size:12px;color:var(--muted)}
+.bar{height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:14px}
+.bar i{display:block;height:100%;width:35%;border-radius:99px;background:linear-gradient(90deg,var(--violet),var(--cyan));animation:slide 1.3s ease-in-out infinite}
+@keyframes slide{0%{margin-left:-35%}100%{margin-left:100%}}
+.result-head{display:flex;gap:14px;align-items:center;margin-bottom:18px}
+.file-icon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:23px;background:linear-gradient(135deg,rgba(52,211,153,.25),rgba(34,211,238,.2));border:1px solid rgba(52,211,153,.3);flex:none}
+.result h3{margin:0 0 4px;font-size:16px;word-break:break-all}
+.result p{margin:0;font-size:12px;color:var(--muted)}
+.result-actions,.picker-actions{display:flex;gap:9px;flex-wrap:wrap}
+.result-actions a,.result-actions button,.picker-actions a,.picker-actions button{padding:12px 17px;font-size:13px}
+.picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:18px}
+.picker-item{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:rgba(5,8,18,.5)}
+.picker-item .thumb{height:130px;background:linear-gradient(135deg,#1e293b,#0f172a);display:grid;place-items:center;font-size:26px;object-fit:cover;width:100%}
+.picker-item .thumb img{width:100%;height:100%;object-fit:cover}
+.picker-item .meta{padding:10px 11px}
+.picker-item .meta b{display:block;font-size:12px;margin-bottom:9px;text-transform:capitalize}
+.picker-item .meta a,.picker-item .meta button{width:100%;padding:9px;font-size:12px}
+.error{border-color:rgba(251,113,133,.35);background:rgba(80,20,35,.25)}
+.error h3{margin:0 0 8px;font-size:16px;color:#fda4af}
+.error p{margin:0;font-size:13px;line-height:1.65;color:#fecdd3}
+.error code{background:rgba(0,0,0,.35);padding:2px 6px;border-radius:5px;font-size:11px}
+.info-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.info-head h2,.steps h2,.history h2{margin:0;font-size:15px;letter-spacing:-.2px}
+.info-head span{font-size:11px;color:var(--muted)}
+#services{display:flex;gap:7px;flex-wrap:wrap}
+#services .chip{cursor:default}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:30px 0 22px}
+.step{padding:18px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025)}
+.step b{display:block;font-size:20px;background:linear-gradient(90deg,#a78bfa,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:8px}
+.step h3{margin:0 0 5px;font-size:13px}.step p{margin:0;font-size:12px;color:var(--muted);line-height:1.6}
+.history{margin-bottom:26px}
+.history .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.history .chip{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+footer{border-top:1px solid var(--line);padding:22px 0 34px;color:var(--muted);font-size:12px;line-height:1.8}
+footer a{color:#a78bfa;text-decoration:none}
+dialog{width:min(520px,92vw);border:1px solid var(--line);border-radius:20px;background:#111627;color:var(--txt);padding:26px;box-shadow:0 30px 90px rgba(0,0,0,.7);font-family:var(--font)}
+dialog::backdrop{background:rgba(3,5,12,.78);backdrop-filter:blur(5px)}
+dialog h2{margin:0 0 6px;font-size:19px}
+dialog .sub{color:var(--muted);font-size:12px;line-height:1.6;margin:0 0 20px}
+.field{margin-bottom:15px}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:7px}
+.hint{font-size:11px;color:#7c86aa;margin-top:6px;line-height:1.5}
+.dialog-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px}
+#testResult{font-size:12px;margin-top:12px;line-height:1.6;color:var(--muted);word-break:break-word}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:#1b2340;border:1px solid var(--line);border-radius:12px;padding:11px 18px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:99;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:700px){.options{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:1fr}.card{padding:18px}.hero{padding:22px 0}.primary-btn{padding:13px 17px}.pill{max-width:150px}}
+@media(max-width:420px){.options{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="bg"><div class="orb3"></div></div>
+
+<header class="wrap topbar">
+  <a class="brand" href="#"><span class="logo">▶</span><span>Youtyers<small>powered by cobalt</small></span></a>
+  <div class="top-actions">
+    <button class="pill load" id="statusPill" title="Connection status / settings"><span class="dot"></span><span id="statusText">Connecting…</span></button>
+    <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">⚙</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="badge">⚡ Cobalt API · 20+ sites supported</div>
+    <h1>Video download,<br><span>seedha apne site se.</span></h1>
+    <p>YouTube, Instagram, TikTok, Facebook, Twitter aur bhi bahut saare — link paste karo, quality chuno, aur file apne device mein save karo. Bina ad, bina jhanjhat.</p>
+  </section>
+
+  <section class="card">
+    <form id="dlForm">
+      <label class="tiny" for="urlInput">Video / post ka link</label>
+      <div class="input-row">
+        <input id="urlInput" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://www.youtube.com/watch?v=..." required>
+        <button type="button" class="ghost-btn" id="pasteBtn">📋 Paste</button>
+        <button type="submit" class="primary-btn" id="goBtn">⬇ Download</button>
+      </div>
+      <div class="examples"><span>Try:</span>
+        <button type="button" class="chip" data-example="youtube">YouTube</button>
+        <button type="button" class="chip" data-example="instagram">Instagram</button>
+        <button type="button" class="chip" data-example="tiktok">TikTok</button>
+        <button type="button" class="chip" data-example="twitter">X / Twitter</button>
+        <button type="button" class="chip" data-example="soundcloud">SoundCloud</button>
+      </div>
+
+      <div class="options">
+        <div class="opt"><label for="mode">Mode</label><select id="mode">
+          <option value="auto">Video + Audio</option><option value="audio">Audio only (MP3)</option><option value="mute">Video (mute)</option>
+        </select></div>
+        <div class="opt"><label for="quality">Quality</label><select id="quality">
+          <option value="1080">1080p</option><option value="720">720p</option><option value="max">Max / 4K</option>
+          <option value="2160">2160p</option><option value="1440">1440p</option><option value="480">480p</option><option value="360">360p</option><option value="240">240p</option>
+        </select></div>
+        <div class="opt"><label for="youtubeVideoCodec">YouTube codec</label><select id="youtubeVideoCodec">
+          <option value="h264">H.264 (default)</option><option value="vp9">VP9</option><option value="av1">AV1</option>
+        </select></div>
+        <div class="opt"><label for="audioFormat">Audio format</label><select id="audioFormat">
+          <option value="mp3">MP3</option><option value="best">Best</option><option value="ogg">OGG</option><option value="wav">WAV</option><option value="opus">Opus</option>
+        </select></div>
+        <div class="opt"><label for="audioBitrate">Bitrate</label><select id="audioBitrate">
+          <option value="128">128 kbps</option><option value="320">320 kbps</option><option value="256">256 kbps</option><option value="96">96 kbps</option><option value="64">64 kbps</option>
+        </select></div>
+        <div class="opt"><label for="filenameStyle">Filename</label><select id="filenameStyle">
+          <option value="basic">Basic</option><option value="pretty">Pretty</option><option value="classic">Classic</option><option value="nerdy">Nerdy</option>
+        </select></div>
+        <div class="opt"><label for="subtitleLang">Subtitles (optional)</label><input id="subtitleLang" maxlength="5" placeholder="hi / en"></div>
+        <div class="opt"><label for="youtubeVideoContainer">Container</label><select id="youtubeVideoContainer">
+          <option value="auto">Auto</option><option value="mp4">MP4</option><option value="webm">WebM</option><option value="mkv">MKV</option>
+        </select></div>
+      </div>
+      <div class="toggles">
+        <label class="check"><input type="checkbox" id="alwaysProxy"> Hamesha proxy (CORS issue ho to)</label>
+        <label class="check"><input type="checkbox" id="youtubeBetterAudio"> Better YouTube audio</label>
+        <label class="check"><input type="checkbox" id="disableMetadata"> Metadata hatao</label>
+        <label class="check"><input type="checkbox" id="convertGif" checked> Twitter GIF as GIF</label>
+      </div>
+    </form>
+  </section>
+
+  <section class="card progress hidden" id="progress">
+    <div class="spinner"></div>
+    <div style="flex:1"><h3 id="progressTitle">Cobalt se connect ho rahe hain…</h3><p id="progressSub">Link process ho raha hai, thoda wait karo.</p><div class="bar"><i></i></div></div>
+  </section>
+
+  <section class="card result hidden" id="result">
+    <div class="result-head">
+      <div class="file-icon" id="resultIcon">🎬</div>
+      <div><h3 id="resultTitle">File ready</h3><p id="resultMeta"></p></div>
+    </div>
+    <div class="result-actions">
+      <a class="primary-btn" id="downloadBtn" href="#" download>⬇ Download file</a>
+      <button class="ghost-btn" id="forceBtn" type="button">💾 Force save (progress)</button>
+      <button class="ghost-btn" id="copyBtn" type="button">🔗 Copy link</button>
+      <a class="ghost-btn" id="openBtn" href="#" target="_blank" rel="noopener">↗ Open</a>
+    </div>
+    <div class="bar hidden" id="dlBar" style="margin-top:16px"><i id="dlBarFill" style="width:0;animation:none;margin:0"></i></div>
+    <p class="hint" id="resultHint">Download start na ho to “Force save” ya “Open” dabao — ya browser ka popup allow karo.</p>
+  </section>
+
+  <section class="card picker hidden" id="picker">
+    <div class="result-head"><div class="file-icon">🖼️</div><div><h3>Is post mein multiple media hain</h3><p id="pickerMeta">Jo chahiye uska Download dabao.</p></div></div>
+    <div class="picker-grid" id="pickerGrid"></div>
+  </section>
+
+  <section class="card error hidden" id="errorBox">
+    <h3>❌ Download nahi ho paya</h3><p id="errorText"></p>
+  </section>
+
+  <section class="card">
+    <div class="info-head"><h2>✅ Supported sites</h2><span id="versionTag">Cobalt instance info load ho raha hai…</span></div>
+    <div id="services" class="chips"><span class="chip">loading…</span></div>
+  </section>
+
+  <section class="steps">
+    <div class="step"><b>01</b><h3>Link paste karo</h3><p>Kisi bhi supported site se public video / post ka URL copy karke upar paste karo.</p></div>
+    <div class="step"><b>02</b><h3>Options chuno</h3><p>Quality, audio-only ya mute, codec aur filename style apni marzi se set karo.</p></div>
+    <div class="step"><b>03</b><h3>File save karo</h3><p>Cobalt file taiyar karega, phir “Download file” se seedha device mein save ho jayegi.</p></div>
+  </section>
+
+  <section class="history hidden card" id="historyBox">
+    <h2>🕘 Recent links</h2><div class="chips" id="historyList"></div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div id="footerInfo">Youtyers · aapka apna Cobalt-powered downloader.</div>
+  <div>Sirf aise content download karo jiska aapko adhikar hai · <a href="https://github.com/imputnet/cobalt" target="_blank" rel="noopener">Cobalt</a> open-source project hai.</div>
+</footer>
+
+<dialog id="settingsDialog">
+  <h2>⚙️ Settings</h2>
+  <p class="sub">Yahan aap Cobalt API instance badal sakte ho. Default aapka apna instance set hai.</p>
+  <div class="field"><label for="apiInput">Cobalt API URL</label><input id="apiInput" type="text" spellcheck="false" placeholder="https://…/"><div class="hint">GET / par instance ka JSON aana chahiye. URL ke aage <code>?api=</code> query se bhi set kar sakte ho.</div></div>
+  <div class="field"><label for="keyInput">API key (optional)</label><input id="keyInput" type="password" placeholder="Api-Key … / Bearer …" autocomplete="off"><div class="hint">Sirf agar instance auth maangta hai. Key browser ke localStorage mein save hoti hai.</div></div>
+  <div class="dialog-actions">
+    <button class="primary-btn" id="saveSettings" type="button">Save</button>
+    <button class="ghost-btn" id="testSettings" type="button">Test connection</button>
+    <button class="ghost-btn" id="resetSettings" type="button">Reset default</button>
+    <button class="ghost-btn" id="closeSettings" type="button">Close</button>
+  </div>
+  <div id="testResult"></div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  var DEFAULT_API = 'https://youtyers-528be.containers.snapdeploy.app/';
+  var LS_API = 'youtyers.api', LS_KEY = 'youtyers.key', LS_HIST = 'youtyers.history';
+  var EXAMPLES = {
+    youtube:'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    instagram:'https://www.instagram.com/reel/C4_example/',
+    tiktok:'https://www.tiktok.com/@user/video/1234567890',
+    twitter:'https://x.com/user/status/1234567890',
+    soundcloud:'https://soundcloud.com/user/track-name'
+  };
+  var DEFAULT_SERVICES = ['youtube','instagram','tiktok','twitter','facebook','reddit','vimeo','dailymotion','soundcloud','bilibili','pinterest','tumblr','bluesky','vk','ok','snapchat','streamable','loom','twitch clips','rutube','newgrounds'];
+  var state = { api:DEFAULT_API, key:'', mode:'direct', info:null, busy:false, lastUrl:'', lastFilename:'' };
+  var $ = function(id){ return document.getElementById(id); };
+  var esc = function(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); };
+
+  function normalizeApi(v){
+    v = String(v||'').trim();
+    if(!v) return DEFAULT_API;
+    if(!/^https?:\/\//i.test(v)) v = 'https://' + v;
+    try { var u = new URL(v); if(!/^https?:$/.test(u.protocol)) return DEFAULT_API; v = u.origin + (u.pathname === '/' ? '/' : u.pathname.replace(/\/+$/,'')); } catch(e){ return DEFAULT_API; }
+    return v.endsWith('/') ? v : v + '/';
+  }
+  function authHeader(){ if(!state.key) return null; return /^(Api-Key|Bearer)\s/i.test(state.key) ? state.key : 'Api-Key ' + state.key; }
+  function proxyUrl(){ return '/api/cobalt?api=' + encodeURIComponent(state.api); }
+
+  function readConfig(){
+    var q = new URLSearchParams(location.search).get('api');
+    var saved = null, k = '', h = [];
+    try { saved = localStorage.getItem(LS_API); k = localStorage.getItem(LS_KEY)||''; h = JSON.parse(localStorage.getItem(LS_HIST)||'[]'); } catch(e){}
+    state.api = normalizeApi(q || (window.COBALT_API_URL) || saved || DEFAULT_API);
+    state.key = k;
+    state.history = Array.isArray(h) ? h : [];
+  }
+  function saveConfig(){
+    try { localStorage.setItem(LS_API,state.api); localStorage.setItem(LS_KEY,state.key); } catch(e){}
+  }
+  function toast(msg){ var t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2600); }
+  function show(id,on){ $(id).classList[on?'remove':'add']('hidden'); }
+  function setStatus(kind,text){ var p=$('statusPill'); p.className='pill'+(kind?' '+kind:''); $('statusText').textContent=text; }
+  function setProgress(title,sub,on){ show('progress',!!on); if(title) $('progressTitle').textContent=title; if(sub) $('progressSub').textContent=sub; }
+  function showError(html){ $('errorText').innerHTML=html; show('errorBox',true); }
+
+  function renderServices(list){
+    var box=$('services'); box.innerHTML='';
+    (list && list.length ? list : DEFAULT_SERVICES).forEach(function(s){
+      var c=document.createElement('span'); c.className='chip'; c.textContent=s; box.appendChild(c);
+    });
+  }
+  function renderVersion(){
+    var i=state.info;
+    if(!i || !i.cobalt){ $('versionTag').textContent='instance offline · demo list'; $('footerInfo').textContent='Youtyers · '+state.api; return; }
+    $('versionTag').textContent='Cobalt v'+esc(i.cobalt.version||'?')+' · '+(i.cobalt.services||[]).length+' services';
+    $('footerInfo').textContent='Youtyers · connected to '+esc(i.cobalt.url||state.api)+' · '+(state.mode==='proxy'?'via relay':'direct');
+  }
+  function renderHistory(){
+    var box=$('historyList'); box.innerHTML='';
+    if(!state.history.length){ show('historyBox',false); return; }
+    show('historyBox',true);
+    state.history.forEach(function(u){
+      var b=document.createElement('button'); b.className='chip'; b.type='button'; b.textContent=u; b.title=u;
+      b.onclick=function(){ $('urlInput').value=u; $('urlInput').focus(); window.scrollTo({top:0,behavior:'smooth'}); };
+      box.appendChild(b);
+    });
+  }
+  function pushHistory(u){
+    state.history=[u].concat(state.history.filter(function(x){return x!==u;})).slice(0,8);
+    try{ localStorage.setItem(LS_HIST,JSON.stringify(state.history)); }catch(e){}
+    renderHistory();
+  }
+
+  function timeoutFetch(url,opts,ms){
+    var c=new AbortController(), t=setTimeout(function(){c.abort();},ms||20000);
+    opts=opts||{}; opts.signal=c.signal;
+    return fetch(url,opts).catch(function(e){ throw {kind:'network',message:(e&&e.message)||'network error'}; }).finally(function(){clearTimeout(t);});
+  }
+  function baseHeaders(){
+    var h={'Accept':'application/json','Content-Type':'application/json'};
+    var a=authHeader(); if(a) h['Authorization']=a;
+    return h;
+  }
+  function parseResponse(res){
+    return res.text().then(function(txt){
+      var data=null; try{ data=JSON.parse(txt); }catch(e){}
+      if(!data) throw {kind:'http', status:res.status, message:'Server ne JSON nahi bheja (HTTP '+res.status+'). Shayad API URL galat hai ya relay unavailable.'};
+      if(data.status==='error') throw {kind:'api', status:res.status, data:data};
+      if(!res.ok) throw {kind:'http', status:res.status, message:'HTTP '+res.status+' — '+(data&&data.error&&data.error.code||'unknown error')};
+      return data;
+    });
+  }
+  // direct browser call first; if CORS/network blocks it, fall back to same-origin relay
+  function cobaltPost(payload,allowFallback){
+    var useProxy = state.mode==='proxy';
+    return timeoutFetch(useProxy?proxyUrl():state.api,{method:'POST',headers:baseHeaders(),body:JSON.stringify(payload)},45000)
+      .then(parseResponse)
+      .catch(function(err){
+        if(!allowFallback || useProxy || !(err && err.kind==='network')) throw err;
+        state.mode='proxy';
+        return timeoutFetch(proxyUrl(),{method:'POST',headers:baseHeaders(),body:JSON.stringify(payload)},45000).then(parseResponse);
+      });
+  }
+  function cobaltGet(url){
+    var a=authHeader(), h=a?{'Authorization':a}:{};
+    return timeoutFetch(url,{headers:h},10000).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
+  }
+  function ping(){
+    setStatus('load','Connecting…');
+    cobaltGet(state.api).then(function(info){
+      state.info=info; state.mode='direct';
+      setStatus('ok','Cobalt v'+((info.cobalt&&info.cobalt.version)||'?')+' · connected');
+      renderServices(info.cobalt&&info.cobalt.services); renderVersion();
+    }).catch(function(){
+      cobaltGet(proxyUrl()).then(function(info){
+        state.info=info; state.mode='proxy';
+        setStatus('ok','Connected via relay'); renderServices(info.cobalt&&info.cobalt.services); renderVersion();
+      }).catch(function(){
+        setStatus('warn','Instance se connect nahi hua'); renderServices(null); renderVersion();
+      });
+    });
+  }
+
+  function friendlyError(err){
+    if(err && err.kind==='network') return 'Cobalt instance tak pahunch nahi pa rahe. <b>Settings</b> mein API URL check karo, ya <code>?api=</code> se apna instance do. Instance shayad band ho gaya ho ya CORS block kar raha ho.';
+    if(err && err.kind==='http') return esc(err.message||'Unknown HTTP error');
+    var d=err&&err.data||{}, e=d.error||{}, code=String(e.code||'unknown');
+    var map={
+      'error.api.link.invalid':'Link valid nahi lag raha. Pura URL copy karo (https://…).',
+      'error.api.link.unsupported':'Ye site / link abhi supported nahi hai.',
+      'error.api.link.identifier':'Is link se video identify nahi ho paya.',
+      'error.api.auth.missing':'Is instance ko API key chahiye — Settings mein key daalo.',
+      'error.api.auth.invalid':'API key galat hai.',
+      'error.api.auth.not_required':'Is instance ko key nahi chahiye — Settings se key hatao.',
+      'error.api.rate.exceeded':'Rate limit cross ho gayi. Thodi der (1 min) baad try karo.',
+      'error.api.fetch.fail':'Content fetch nahi ho paya. Link private ya deleted to nahi?',
+      'error.api.fetch.empty':'Is link par koi downloadable media nahi mila.',
+      'error.api.fetch.critical':'Cobalt ko content laane mein dikkat aayi, thodi der baad try karo.',
+      'error.api.content.private':'Ye content private hai, download nahi ho sakta.',
+      'error.api.content.too_long':'Video bahut lamba hai (instance ka duration limit). Chhota video try karo.',
+      'error.api.content.region':'Ye content aapke region mein available nahi hai.',
+      'error.api.content.age':'Age-restricted content, instance isko handle nahi kar paaya.',
+      'error.api.content.nsfw':'Instance ne NSFW content block kiya hai.',
+      'error.api.youtube.login':'YouTube ne login maanga — instance ko cookies chahiye.',
+      'error.api.tunnel.fail':'File tunnel banate waqt error aaya. “Hamesha proxy” ON karke try karo.',
+      'error.api.unknown':'Cobalt ko samajh nahi aaya, dobara try karo.'
+    };
+    var msg=map[code];
+    if(!msg){
+      if(code.indexOf('rate')>=0) msg='Rate limit lag gaya hai — 1 minute baad try karo.';
+      else if(code.indexOf('auth')>=0) msg='Authentication issue — Settings mein API key check karo.';
+      else if(code.indexOf('youtube')>=0) msg='YouTube se related error — thodi der baad ya dusri quality se try karo.';
+      else if(code.indexOf('link')>=0) msg='Link mein problem hai — pura, sahi URL paste karo.';
+      else msg='Cobalt ne error return kiya.';
+    }
+    var extra='';
+    if(e.context&&e.context.limit) extra=' Limit: '+esc(e.context.limit)+'.';
+    return esc(msg)+extra+' <br><span style="opacity:.7">Code: <code>'+esc(code)+'</code></span>';
+  }
+
+  function buildPayload(url){
+    var p={ url:url,
+      videoQuality:$('quality').value, downloadMode:$('mode').value,
+      audioFormat:$('audioFormat').value, audioBitrate:$('audioBitrate').value,
+      filenameStyle:$('filenameStyle').value,
+      youtubeVideoCodec:$('youtubeVideoCodec').value,
+      youtubeVideoContainer:$('youtubeVideoContainer').value,
+      disableMetadata:$('disableMetadata').checked,
+      alwaysProxy:$('alwaysProxy').checked,
+      youtubeBetterAudio:$('youtubeBetterAudio').checked,
+      convertGif:$('convertGif').checked,
+      localProcessing:'disabled'
+    };
+    var sub=$('subtitleLang').value.trim(); if(sub) p.subtitleLang=sub;
+    return p;
+  }
+
+  function setResult(data){
+    state.lastUrl=data.url; state.lastFilename=data.filename||'youtyers-download';
+    $('resultIcon').textContent = $('mode').value==='audio' ? '🎵' : '🎬';
+    $('resultTitle').textContent = data.filename || 'Aapki file ready hai';
+    $('resultMeta').textContent = (data.status==='tunnel'?'Cobalt tunnel':'Direct link')+' · '+$('quality').value+'p · '+$('mode').value.toUpperCase();
+    ['downloadBtn','openBtn'].forEach(function(id){ var el=$(id); el.href=data.url; });
+    $('downloadBtn').setAttribute('download',state.lastFilename);
+    $('resultHint').textContent='Download start na ho to “Force save” ya “Open” dabao — ya browser ka popup allow karo.';
+    show('result',true);
+  }
+  function renderPicker(data){
+    var old=$('pickerAudio'); if(old) old.remove();
+    var grid=$('pickerGrid'); grid.innerHTML='';
+    $('pickerMeta').textContent=(data.picker||[]).length+' items mile'+(data.audio?' · background audio bhi hai':'')+'.';
+    (data.picker||[]).forEach(function(item,i){
+      var card=document.createElement('div'); card.className='picker-item';
+      var thumb=document.createElement('div'); thumb.className='thumb';
+      if(item.thumb){ var img=document.createElement('img'); img.src=item.thumb; img.alt=''; img.onerror=function(){thumb.textContent='🖼️';img.remove();}; thumb.appendChild(img); }
+      else thumb.textContent=item.type==='video'?'🎬':(item.type==='gif'?'🌀':'🖼️');
+      var meta=document.createElement('div'); meta.className='meta';
+      var b=document.createElement('b'); b.textContent=(item.type||'media')+' #'+(i+1);
+      var a=document.createElement('a'); a.className='primary-btn btn'; a.href=item.url; a.target='_blank'; a.rel='noopener'; a.setAttribute('download','youtyers-'+(i+1)); a.textContent='⬇ Download';
+      var c=document.createElement('button'); c.className='ghost-btn'; c.type='button'; c.textContent='🔗 Copy'; c.style.marginTop='7px'; c.onclick=function(){copyText(item.url);};
+      meta.appendChild(b); meta.appendChild(a); meta.appendChild(c);
+      card.appendChild(thumb); card.appendChild(meta); grid.appendChild(card);
+    });
+    if(data.audio){
+      var wrap=document.createElement('div'); wrap.id='pickerAudio'; wrap.className='result-actions'; wrap.style.marginTop='16px';
+      var aa=document.createElement('a'); aa.className='primary-btn'; aa.href=data.audio; aa.setAttribute('download',data.audioFilename||'youtyers-audio'); aa.textContent='🎵 Background audio download';
+      wrap.appendChild(aa); grid.parentNode.appendChild(wrap);
+    }
+    show('picker',true);
+  }
+  function showLocalProcessing(data){
+    state.lastUrl=(data.tunnel&&data.tunnel[0])||'';
+    state.lastFilename=(data.output&&data.output.filename)||'youtyers-file';
+    $('resultIcon').textContent='🧩';
+    $('resultTitle').textContent='Is instance ko on-device processing chahiye';
+    $('resultMeta').textContent='Type: '+esc(data.type||'merge')+' · '+(data.tunnel||[]).length+' part(s)';
+    $('downloadBtn').textContent='⬇ Pehla part download'; $('downloadBtn').href=state.lastUrl; $('downloadBtn').setAttribute('download',state.lastFilename);
+    $('openBtn').href=state.lastUrl;
+    $('resultHint').textContent='Server ne full merge support nahi kiya. Upar se parts download karo, ya Settings mein dusra Cobalt instance set karo.';
+    show('result',true);
+  }
+
+  function copyText(t){
+    if(navigator.clipboard&&navigator.clipboard.writeText) return navigator.clipboard.writeText(t).then(function(){toast('Link copy ho gaya ✅');}).catch(function(){legacyCopy(t);});
+    legacyCopy(t);
+  }
+  function legacyCopy(t){
+    var i=document.createElement('textarea'); i.value=t; i.style.position='fixed'; i.style.opacity='0'; document.body.appendChild(i); i.select();
+    try{document.execCommand('copy');toast('Link copy ho gaya ✅');}catch(e){toast('Copy nahi hua — link manually select karo');}
+    i.remove();
+  }
+  function forceSave(){
+    if(!state.lastUrl){return;}
+    var bar=$('dlBar'), fill=$('dlBarFill'); show('dlBar',true); fill.style.width='2%';
+    $('resultHint').textContent='File fetch ho rahi hai… large file mein thoda time lagega.';
+    timeoutFetch(state.lastUrl,{},120000).then(function(res){
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      var total=Number(res.headers.get('content-length')||res.headers.get('estimated-content-length')||0);
+      var type=res.headers.get('content-type')||'application/octet-stream';
+      if(!res.body||!res.body.getReader) return res.blob().then(function(b){return {blob:b};});
+      var reader=res.body.getReader(), chunks=[], got=0;
+      function pump(){ return reader.read().then(function(r){
+        if(r.done){
+          var blob=new Blob(chunks,{type:type});
+          if(total) fill.style.width='100%';
+          return {blob:blob};
+        }
+        chunks.push(r.value); got+=r.value.length;
+        if(total) fill.style.width=Math.min(99,Math.round(got/total*100))+'%';
+        else fill.style.width=Math.min(95,(fill.style.width?parseFloat(fill.style.width):2)+4)+'%';
+        return pump();
+      }); }
+      return pump();
+    }).then(function(out){
+      var u=URL.createObjectURL(out.blob), a=document.createElement('a');
+      a.href=u; a.download=state.lastFilename||'youtyers-download'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){URL.revokeObjectURL(u);},60000);
+      $('resultHint').textContent='Save ho gaya ✅ — Downloads folder check karo.';
+      fill.style.width='100%';
+    }).catch(function(){
+      show('dlBar',false);
+      $('resultHint').textContent='Relay/CORS ki wajah se force save nahi hua. “Download file” ya “Open” use karo, ya link copy karke naye tab mein kholo.';
+      toast('Force save fail — direct download try karo');
+    });
+  }
+
+  function onSubmit(ev){
+    ev.preventDefault();
+    if(state.busy) return;
+    var url=$('urlInput').value.trim();
+    if(!url){ toast('Pehle link paste karo'); return; }
+    if(!/^https?:\/\//i.test(url)){ toast('Link https:// se shuru hona chahiye'); return; }
+    state.busy=true; $('goBtn').disabled=true; $('goBtn').textContent='⏳ Processing…';
+    show('errorBox',false); show('result',false); show('picker',false); show('dlBar',false);
+    setProgress('Cobalt link process kar raha hai…','Service detect → best format → file ready. 10–30 sec lag sakte hain.',true);
+    cobaltPost(buildPayload(url),true).then(function(data){
+      show('progress',false);
+      if(data.status==='tunnel'||data.status==='redirect') setResult(data);
+      else if(data.status==='picker') renderPicker(data);
+      else if(data.status==='local-processing') showLocalProcessing(data);
+      else showError('Unknown response: <code>'+esc(data.status||'empty')+'</code>. Instance shayad purana version chal raha hai.');
+      pushHistory(url);
+      toast('✅ Ho gaya!');
+    }).catch(function(err){
+      show('progress',false);
+      if(err && err.kind==='network'){ state.mode='proxy'; err={kind:'network'}; }
+      showError(friendlyError(err));
+      toast('Error aa gaya');
+    }).finally(function(){ state.busy=false; $('goBtn').disabled=false; $('goBtn').textContent='⬇ Download'; });
+  }
+
+  // ---- wiring ----
+  $('dlForm').addEventListener('submit',onSubmit);
+  $('pasteBtn').onclick=function(){
+    if(navigator.clipboard&&navigator.clipboard.readText){
+      navigator.clipboard.readText().then(function(t){ if(t){$('urlInput').value=t.trim(); toast('Paste ho gaya ✅');} }).catch(function(){$('urlInput').focus(); toast('Clipboard block hai — Ctrl+V dabao');});
+    } else { $('urlInput').focus(); toast('Ctrl+V se paste karo'); }
+  };
+  document.querySelectorAll('[data-example]').forEach(function(b){ b.onclick=function(){ $('urlInput').value=EXAMPLES[b.dataset.example]; $('urlInput').focus(); toast('Example link daal diya — apna asli link paste karo'); }; });
+  $('copyBtn').onclick=function(){ copyText(state.lastUrl); };
+  $('forceBtn').onclick=forceSave;
+  $('downloadBtn').addEventListener('click',function(){ toast('Download shuru… popup block na karna'); });
+
+  var dlg=$('settingsDialog');
+  function openSettings(){ $('apiInput').value=state.api; $('keyInput').value=state.key; $('testResult').textContent=''; if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open',''); }
+  function closeSettings(){ if(dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
+  $('settingsBtn').onclick=openSettings; $('statusPill').onclick=openSettings; $('closeSettings').onclick=closeSettings;
+  $('saveSettings').onclick=function(){
+    state.api=normalizeApi($('apiInput').value); state.key=$('keyInput').value.trim(); saveConfig();
+    $('apiInput').value=state.api; toast('Settings save ✅'); ping(); closeSettings();
+  };
+  $('resetSettings').onclick=function(){
+    state.api=DEFAULT_API; state.key=''; $('apiInput').value=DEFAULT_API; $('keyInput').value='';
+    saveConfig(); toast('Default instance set ✅'); ping();
+  };
+  $('testSettings').onclick=function(){
+    var candidate=normalizeApi($('apiInput').value), old=state.api, oldKey=state.key;
+    state.api=candidate; state.key=$('keyInput').value.trim();
+    $('testResult').textContent='Testing '+candidate+' …';
+    cobaltGet(candidate).then(function(info){
+      $('testResult').innerHTML='✅ Connected — Cobalt <b>'+esc((info.cobalt&&info.cobalt.version)||'?')+'</b>, '+((info.cobalt&&info.cobalt.services)||[]).length+' services.';
+    }).catch(function(){
+      $('testResult').textContent='Direct call fail (CORS / network). Relay try kar rahe hain…';
+      cobaltGet(proxyUrl()).then(function(info){ $('testResult').textContent='✅ Relay se connected — Cobalt v'+((info.cobalt&&info.cobalt.version)||'?'); })
+        .catch(function(){ $('testResult').textContent='❌ Dono raaste fail. URL check karo ya instance restart karo.'; });
+    }).finally(function(){ state.api=old; state.key=oldKey; });
+  };
+
+  readConfig(); renderHistory(); renderServices(null); renderVersion(); ping();
+})();
+</script>
+</body>
+</html>

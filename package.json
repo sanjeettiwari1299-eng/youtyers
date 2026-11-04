@@ -1,0 +1,10 @@
+{
+  "name": "youtyers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Apna Cobalt-powered video downloader (static site + relay)",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  }
+}
