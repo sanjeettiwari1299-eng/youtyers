@@ -83,7 +83,9 @@ jobs:
           ")
             bytes='-'
             if [ -n "$fileurl" ]; then
-              bytes=$(curl -sS -L --max-time 45 -r 0-2047 -o /tmp/chunk.bin -w 'HTTP %{http_code}, %{size_download} bytes' "$fileurl" 2>/dev/null || echo 'stream failed')
+              bytes=$(curl -sS -L --max-time 45 -A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36' \
+                -e 'https://vimeo.com/' -H 'Accept: */*' -r 0-2047 -o /tmp/chunk.bin \
+                -w 'HTTP %{http_code}, %{size_download} bytes' "$fileurl" 2>/dev/null || echo 'stream failed')
             fi
             echo "::notice title=Download probe: $label::HTTP $code :: $parsed :: file bytes: $bytes"
           }
