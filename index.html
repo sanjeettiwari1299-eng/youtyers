@@ -240,6 +240,7 @@ dialog .sub{color:var(--muted);font-size:12px;line-height:1.6;margin:0 0 20px}
   <p class="sub">Yahan aap Cobalt API instance badal sakte ho. Default aapka apna instance set hai.</p>
   <div class="field"><label for="apiInput">Cobalt API URL</label><input id="apiInput" type="text" spellcheck="false" placeholder="https://…/"><div class="hint">GET / par instance ka JSON aana chahiye. URL ke aage <code>?api=</code> query se bhi set kar sakte ho.</div></div>
   <div class="field"><label for="keyInput">API key (optional)</label><input id="keyInput" type="password" placeholder="Api-Key … / Bearer …" autocomplete="off"><div class="hint">Sirf agar instance auth maangta hai. Key browser ke localStorage mein save hoti hai.</div></div>
+  <div class="field"><label for="relayInput">Relay URL (optional)</label><input id="relayInput" type="text" spellcheck="false" placeholder="https://…/api/cobalt?api="><div class="hint">Agar browser CORS block kare to ye relay use hoga. Jaise <code>https://host/api/cobalt?api=</code> — iske aage encoded API URL judta hai. GitHub Pages par <code>?relay=</code> query se bhi de sakte ho.</div></div>
   <div class="dialog-actions">
     <button class="primary-btn" id="saveSettings" type="button">Save</button>
     <button class="ghost-btn" id="testSettings" type="button">Test connection</button>
@@ -255,7 +256,7 @@ dialog .sub{color:var(--muted);font-size:12px;line-height:1.6;margin:0 0 20px}
 (function(){
   'use strict';
   var DEFAULT_API = 'https://youtyers-528be.containers.snapdeploy.app/';
-  var LS_API = 'youtyers.api', LS_KEY = 'youtyers.key', LS_HIST = 'youtyers.history';
+  var LS_API = 'youtyers.api', LS_KEY = 'youtyers.key', LS_HIST = 'youtyers.history', LS_RELAY = 'youtyers.relay';
   var EXAMPLES = {
     youtube:'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     instagram:'https://www.instagram.com/reel/C4_example/',
@@ -264,7 +265,7 @@ dialog .sub{color:var(--muted);font-size:12px;line-height:1.6;margin:0 0 20px}
     soundcloud:'https://soundcloud.com/user/track-name'
   };
   var DEFAULT_SERVICES = ['youtube','instagram','tiktok','twitter','facebook','reddit','vimeo','dailymotion','soundcloud','bilibili','pinterest','tumblr','bluesky','vk','ok','snapchat','streamable','loom','twitch clips','rutube','newgrounds'];
-  var state = { api:DEFAULT_API, key:'', mode:'direct', info:null, busy:false, lastUrl:'', lastFilename:'' };
+  var state = { api:DEFAULT_API, key:'', relay:'', mode:'direct', info:null, busy:false, lastUrl:'', lastFilename:'' };
   var $ = function(id){ return document.getElementById(id); };
   var esc = function(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); };
 
@@ -276,18 +277,23 @@ dialog .sub{color:var(--muted);font-size:12px;line-height:1.6;margin:0 0 20px}
     return v.endsWith('/') ? v : v + '/';
   }
   function authHeader(){ if(!state.key) return null; return /^(Api-Key|Bearer)\s/i.test(state.key) ? state.key : 'Api-Key ' + state.key; }
-  function proxyUrl(){ return '/api/cobalt?api=' + encodeURIComponent(state.api); }
+  function proxyUrl(){
+    if(state.relay) return state.relay + encodeURIComponent(state.api);
+    return new URL('api/cobalt', document.baseURI).toString() + '?api=' + encodeURIComponent(state.api);
+  }
 
   function readConfig(){
-    var q = new URLSearchParams(location.search).get('api');
-    var saved = null, k = '', h = [];
-    try { saved = localStorage.getItem(LS_API); k = localStorage.getItem(LS_KEY)||''; h = JSON.parse(localStorage.getItem(LS_HIST)||'[]'); } catch(e){}
+    var qs = new URLSearchParams(location.search);
+    var q = qs.get('api'), relayQ = qs.get('relay');
+    var saved = null, k = '', r = '', h = [];
+    try { saved = localStorage.getItem(LS_API); k = localStorage.getItem(LS_KEY)||''; r = localStorage.getItem(LS_RELAY)||''; h = JSON.parse(localStorage.getItem(LS_HIST)||'[]'); } catch(e){}
     state.api = normalizeApi(q || (window.COBALT_API_URL) || saved || DEFAULT_API);
     state.key = k;
+    state.relay = relayQ || (window.COBALT_RELAY) || r || '';
     state.history = Array.isArray(h) ? h : [];
   }
   function saveConfig(){
-    try { localStorage.setItem(LS_API,state.api); localStorage.setItem(LS_KEY,state.key); } catch(e){}
+    try { localStorage.setItem(LS_API,state.api); localStorage.setItem(LS_KEY,state.key); localStorage.setItem(LS_RELAY,state.relay); } catch(e){}
   }
   function toast(msg){ var t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2600); }
   function show(id,on){ $(id).classList[on?'remove':'add']('hidden'); }
@@ -554,15 +560,15 @@ dialog .sub{color:var(--muted);font-size:12px;line-height:1.6;margin:0 0 20px}
   $('downloadBtn').addEventListener('click',function(){ toast('Download shuru… popup block na karna'); });
 
   var dlg=$('settingsDialog');
-  function openSettings(){ $('apiInput').value=state.api; $('keyInput').value=state.key; $('testResult').textContent=''; if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open',''); }
+  function openSettings(){ $('apiInput').value=state.api; $('keyInput').value=state.key; $('relayInput').value=state.relay; $('testResult').textContent=''; if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open',''); }
   function closeSettings(){ if(dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
   $('settingsBtn').onclick=openSettings; $('statusPill').onclick=openSettings; $('closeSettings').onclick=closeSettings;
   $('saveSettings').onclick=function(){
-    state.api=normalizeApi($('apiInput').value); state.key=$('keyInput').value.trim(); saveConfig();
+    state.api=normalizeApi($('apiInput').value); state.key=$('keyInput').value.trim(); state.relay=$('relayInput').value.trim(); saveConfig();
     $('apiInput').value=state.api; toast('Settings save ✅'); ping(); closeSettings();
   };
   $('resetSettings').onclick=function(){
-    state.api=DEFAULT_API; state.key=''; $('apiInput').value=DEFAULT_API; $('keyInput').value='';
+    state.api=DEFAULT_API; state.key=''; state.relay=''; $('apiInput').value=DEFAULT_API; $('keyInput').value=''; $('relayInput').value='';
     saveConfig(); toast('Default instance set ✅'); ping();
   };
   $('testSettings').onclick=function(){

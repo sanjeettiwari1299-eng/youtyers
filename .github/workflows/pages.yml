@@ -1,0 +1,82 @@
+name: Deploy Youtyers to GitHub Pages (Cobalt smoke test included)
+
+on:
+  push:
+    branches: [ 'arena/9c3ca5c9-youtyers' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Smoke test Cobalt API (is download endpoint alive?)
+        id: cobalt
+        continue-on-error: true
+        env:
+          COBALT_API: https://youtyers-528be.containers.snapdeploy.app/
+        run: |
+          echo "===== GET / : instance info + response headers ====="
+          curl -fsS --max-time 20 -D /tmp/headers.txt "$COBALT_API" -o /tmp/info.json
+          cat /tmp/headers.txt
+          cat /tmp/info.json
+          echo
+          echo "===== CORS (browser needs access-control-allow-origin) ====="
+          grep -i 'access-control-allow-origin' /tmp/headers.txt || echo "(ACAO header not present)"
+          echo "===== POST / : does processing endpoint return JSON? ====="
+          curl -sS --max-time 30 -X POST "$COBALT_API" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -H 'Origin: https://example.com' \
+            -d '{"url":"https://invalid.example/video","videoQuality":"720"}' \
+            -o /tmp/post.json -w 'HTTP %{http_code}\n' || true
+          cat /tmp/post.json || true
+          echo
+          python3 - <<'PY'
+          import json
+          info = json.load(open('/tmp/info.json'))
+          print("cobalt version :", info['cobalt']['version'])
+          print("services       :", len(info['cobalt']['services']))
+          try:
+              p = json.load(open('/tmp/post.json'))
+              print("POST status    :", p.get('status'))
+              print("POST error code:", (p.get('error') or {}).get('code'))
+              assert p.get('status') in ('error','tunnel','redirect','picker','local-processing')
+              print("POST endpoint  : OK (returns valid cobalt JSON)")
+          except Exception as e:
+              print("POST probe note:", e)
+          PY
+
+      - name: Build static site
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          touch _site/.nojekyll
+          test -s _site/index.html
+          echo "site bytes: $(wc -c < _site/index.html)"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
