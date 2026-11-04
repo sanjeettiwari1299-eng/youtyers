@@ -14,20 +14,12 @@ Default Cobalt instance: `https://youtyers-528be.containers.snapdeploy.app/`
 
 | URL | Status |
 | --- | --- |
-| Arena live preview (`https://3000-<sandbox>.e2b.app`) | Abhi chal raha hai (`node server.js`) |
-| `https://sanjeettiwari1299-eng.github.io/youtyers/` | Pages enable hone ke baad workflow khud deploy karega |
+| **https://sanjeettiwari1299-eng.github.io/youtyers/** | ✅ **LIVE** — GitHub Pages par deploy ho gaya, khulne par browser khud Cobalt se connect karke v11.7.1 / 21 services load karta hai |
+| Arena live preview (`https://3000-<sandbox>.e2b.app`) | Session ke andar preview panel se chal raha hai (`node server.js`) |
 
-### GitHub Pages enable karna (ek baar, 10 second)
+### Pages setup (ho gaya)
 
-Is repo par Pages API `403 Resource not accessible by integration` deta hai (Arena ke GitHub integration ke paas `pages:write` permission nahi hai — na sandbox token ke paas, na Actions `GITHUB_TOKEN` ke paas). Isliye ye toggle **repo owner ko UI se karna padega**:
-
-1. Repo → **Settings** → **Pages**
-2. **Build and deployment → Source** = `GitHub Actions`
-3. **Actions** tab → workflow `Deploy Youtyers to GitHub Pages` → **Run workflow** (ya koi bhi naya push)
-
-Uske baad har push par site auto-deploy hogi. Workflow mein Pages already-enabled check hai, to enable karte hi deploy chal jayega.
-
-> Agar deploy step permission error de: **Settings → Actions → General → Workflow permissions → "Read and write permissions"** ON kar do.
+Repo → **Settings → Pages → Source = `GitHub Actions`** set kiya gaya. Uske baad `arena/9c3ca5c9-youtyers` branch par har push `.github/workflows/pages.yml` chalata hai aur site auto-deploy hoti hai. (Pehle Pages API `403 Resource not accessible by integration` de raha tha — Arena ke GitHub integration ke paas `pages:write` nahi hai, isliye toggle UI se karna pada.) Workflow se `environment: github-pages` block hataaya gaya kyunki uski branch protection rule sirf `main` ko allow karti thi.
 
 ## Test results (GitHub Actions smoke test, 4 Nov 2026)
 
