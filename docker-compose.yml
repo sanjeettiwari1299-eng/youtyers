@@ -1,0 +1,17 @@
+services:
+  downloader:
+    build: .
+    image: youtyers:latest
+    container_name: youtyers
+    init: true
+    # Auto-start after reboot / sleep-wake / Docker restart.
+    restart: unless-stopped
+    ports:
+      - "${PORT:-9000}:9000"
+    environment:
+      # Set a key to protect the API (recommended if reachable from outside)
+      API_KEY: "${API_KEY:-}"
+      # Optional YouTube cookies. Set to /cookies.txt AND uncomment the volume below.
+      COOKIE_FILE: "${COOKIE_FILE:-}"
+    # volumes:
+    #   - ./cookies.txt:/cookies.txt:ro
