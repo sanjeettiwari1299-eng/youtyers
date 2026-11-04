@@ -1,0 +1,4 @@
+# Secrets / local config - never commit
+.env
+cookies.json
+keys.json

@@ -1,0 +1,19 @@
+services:
+  cobalt:
+    image: ghcr.io/imputnet/cobalt:latest
+    container_name: cobalt
+    init: true
+    read_only: true
+    # Auto-start after reboot / sleep-wake / Docker restart.
+    # Without this, the container stays stopped and the site "stops working".
+    restart: unless-stopped
+    ports:
+      - "${COBALT_PORT:-9000}:9000"
+    environment:
+      # Must be the URL your browser / frontend uses to reach this API.
+      API_URL: "${API_URL:-http://localhost:9000/}"
+      API_PORT: 9000
+      # YouTube fix (optional): uncomment after creating cookies.json (see README).
+      # COOKIE_PATH: /cookies.json
+    # volumes:
+    #   - ./cookies.json:/cookies.json:ro
