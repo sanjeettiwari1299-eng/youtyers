@@ -9,6 +9,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: pages
@@ -24,57 +25,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Smoke test Cobalt API (is download endpoint alive?)
+      - name: Smoke test Cobalt API (is the download endpoint alive?)
         id: cobalt
         continue-on-error: true
         env:
           COBALT_API: https://youtyers-528be.containers.snapdeploy.app/
         run: |
           set +e
-          echo "===== GET / : instance info + response headers ====="
           curl -fsS --max-time 20 -D /tmp/headers.txt "$COBALT_API" -o /tmp/info.json
           GET_CODE=$?
-          cat /tmp/info.json
-          echo
-          echo "===== CORS (browser needs access-control-allow-origin) ====="
-          grep -i 'access-control-allow-origin' /tmp/headers.txt || echo "(ACAO header not present)"
-          echo "===== POST / : does processing endpoint return JSON? ====="
+          ACAO=$(grep -i 'access-control-allow-origin' /tmp/headers.txt | tr -d '\r' | paste -sd ' ' -)
           POST_CODE=$(curl -sS --max-time 30 -X POST "$COBALT_API" \
             -H 'Accept: application/json' \
             -H 'Content-Type: application/json' \
             -H 'Origin: https://example.com' \
             -d '{"url":"https://invalid.example/video","videoQuality":"720"}' \
             -o /tmp/post.json -w '%{http_code}')
-          cat /tmp/post.json
-          echo
-          echo "GET_HTTP=$GET_CODE POST_HTTP=$POST_CODE" > /tmp/codes.txt
-          {
-            echo "## 🔌 Cobalt API smoke test"
-            echo ""
-            echo "| Check | Result |"
-            echo "| --- | --- |"
-            echo "| GET / (instance info) | HTTP $GET_CODE |"
-            echo "| POST / (processing endpoint) | HTTP $POST_CODE |"
-            echo "| ACAO header | $(grep -i 'access-control-allow-origin' /tmp/headers.txt | tr -d '\r' | paste -sd ' ' -) |"
-            python3 - <<'PY'
-          import json
-          try:
-              i=json.load(open('/tmp/info.json'))
-              print("| Cobalt version | %s |" % i['cobalt']['version'])
-              print("| Supported services | %d |" % len(i['cobalt']['services']))
-          except Exception as e:
-              print("| Instance info | parse failed: %s |" % e)
-          try:
-              p=json.load(open('/tmp/post.json'))
-              print("| POST JSON status | %s |" % p.get('status'))
-              print("| POST error code | %s |" % (p.get('error') or {}).get('code','-'))
-          except Exception as e:
-              print("| POST JSON | parse failed: %s |" % e)
-          PY
-            echo ""
-            echo "POST endpoint returns valid Cobalt JSON ⇒ downloads are wired up correctly."
-            echo "Browser calls need the ACAO header above; if missing, set a Relay URL in site Settings."
-          } > /tmp/summary.md
+          VERSION=$(python3 -c "import json;print(json.load(open('/tmp/info.json'))['cobalt']['version'])" 2>/dev/null || echo '?')
+          SERVICES=$(python3 -c "import json;print(len(json.load(open('/tmp/info.json'))['cobalt']['services']))" 2>/dev/null || echo '?')
+          PSTATUS=$(python3 -c "import json;print(json.load(open('/tmp/post.json')).get('status'))" 2>/dev/null || echo '?')
+          PCODE=$(python3 -c "import json;print((json.load(open('/tmp/post.json')).get('error') or {}).get('code'))" 2>/dev/null || echo '?')
+          echo "::notice title=Cobalt smoke test::GET / = HTTP $GET_CODE | version $VERSION | $SERVICES services | ACAO: ${ACAO:-none} | POST / = HTTP $POST_CODE, status=$PSTATUS, code=$PCODE"
+          echo "## Cobalt API smoke test" > /tmp/summary.md
+          echo "" >> /tmp/summary.md
+          echo "| Check | Result |" >> /tmp/summary.md
+          echo "| --- | --- |" >> /tmp/summary.md
+          echo "| GET / instance info | HTTP $GET_CODE (v$VERSION, $SERVICES services) |" >> /tmp/summary.md
+          echo "| ACAO / CORS header | ${ACAO:-none} |" >> /tmp/summary.md
+          echo "| POST / processing | HTTP $POST_CODE, status **$PSTATUS**, code $PCODE |" >> /tmp/summary.md
+          echo "" >> /tmp/summary.md
+          echo "A JSON Cobalt response on POST / means the download pipeline is reachable." >> /tmp/summary.md
           cat /tmp/summary.md
           cat /tmp/summary.md >> "$GITHUB_STEP_SUMMARY"
 
@@ -84,18 +64,48 @@ jobs:
           cp index.html _site/index.html
           touch _site/.nojekyll
           test -s _site/index.html
-          echo "site bytes: $(wc -c < _site/index.html)"
+          echo "::notice title=Build::Site built: $(wc -c < _site/index.html) bytes"
 
-      - name: Setup Pages (enable Pages if needed)
+      - name: Ensure GitHub Pages is enabled
+        id: enable
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set +e
+          GET=$(curl -sS -o /tmp/pages_get.json -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/$REPO/pages")
+          echo "::notice title=Pages GET::HTTP $GET"
+          if [ "$GET" != "200" ]; then
+            CREATE=$(curl -sS -o /tmp/pages_create.json -w '%{http_code}' -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "https://api.github.com/repos/$REPO/pages" \
+              -d '{"build_type":"workflow"}')
+            echo "::notice title=Pages CREATE::HTTP $CREATE - $(head -c 220 /tmp/pages_create.json | tr '\n' ' ')"
+            GET=$(curl -sS -o /tmp/pages_get.json -w '%{http_code}' \
+              -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/$REPO/pages")
+          fi
+          echo "pages_status=$GET" >> "$GITHUB_OUTPUT"
+          if [ "$GET" = "200" ]; then
+            echo "::notice title=Pages::Enabled - deploying now"
+          else
+            echo "::warning title=Pages blocked::Repo Settings > Pages > Build and deployment > Source = GitHub Actions, then re-run this workflow."
+          fi
+
+      - name: Setup Pages
+        if: steps.enable.outputs.pages_status == '200'
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Upload artifact
+        if: steps.enable.outputs.pages_status == '200'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
+        if: steps.enable.outputs.pages_status == '200'
         uses: actions/deploy-pages@v4
