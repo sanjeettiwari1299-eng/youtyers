@@ -55,48 +55,36 @@ jobs:
           cat /tmp/summary.md
           cat /tmp/summary.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: End-to-end download probe (real public video)
+      - name: End-to-end download probes (multiple services)
         id: dlprobe
         continue-on-error: true
         env:
           COBALT_API: https://youtyers-528be.containers.snapdeploy.app/
         run: |
           set +e
-          CODE=$(curl -sS --max-time 90 -X POST "$COBALT_API" \
-            -H 'Accept: application/json' -H 'Content-Type: application/json' \
-            -d '{"url":"https://www.youtube.com/watch?v=jNQXAC9IVRw","videoQuality":"360","downloadMode":"mute","youtubeVideoCodec":"h264"}' \
-            -o /tmp/dl.json -w '%{http_code}')
-          python3 - <<'PY' > /tmp/dlout.txt
-          import json
+          probe () {
+            local label="$1" body="$2"
+            local code
+            code=$(curl -sS --max-time 60 -X POST "$COBALT_API" \
+              -H 'Accept: application/json' -H 'Content-Type: application/json' \
+              -d "$body" -o /tmp/probe.json -w '%{http_code}')
+            local parsed
+            parsed=$(python3 -c "
+          import json,sys
           try:
-              d = json.load(open('/tmp/dl.json'))
-              s = d.get('status')
-              print(s or 'unknown')
-              print(d.get('url') or '')
-              print(d.get('filename') or '')
-              print((d.get('error') or {}).get('code') or '')
-          except Exception as e:
-              print('parse-error'); print(''); print(''); print(str(e))
-          PY
-          STATUS=$(sed -n '1p' /tmp/dlout.txt)
-          DLURL=$(sed -n '2p' /tmp/dlout.txt)
-          FNAME=$(sed -n '3p' /tmp/dlout.txt)
-          ERR=$(sed -n '4p' /tmp/dlout.txt)
-          BYTES=''
-          if [ -n "$DLURL" ]; then
-            BYTES=$(curl -sS -L --max-time 45 -r 0-2047 -o /tmp/chunk.bin -w 'HTTP %{http_code}, %{size_download} bytes' "$DLURL" 2>/dev/null)
-          fi
-          echo "::notice title=Real download probe::POST HTTP $CODE | status=$STATUS | filename=${FNAME:-none} | error=${ERR:-none} | file stream: ${BYTES:-not fetched}"
-          {
-            echo ""
-            echo "### Real download probe (19s public YouTube clip, 360p mute)"
-            echo ""
-            echo "| Check | Result |"
-            echo "| --- | --- |"
-            echo "| POST / | HTTP $CODE, status **$STATUS** |"
-            echo "| Filename | ${FNAME:-none} |"
-            echo "| File stream (first 2 KB) | ${BYTES:-not fetched} |"
-          } >> "$GITHUB_STEP_SUMMARY"
+              d=json.load(open('/tmp/probe.json'))
+              print(d.get('status'), '|', (d.get('error') or {}).get('code','-'), '|', d.get('filename','-'), '|', d.get('url','')[:80])
+          except Exception as e: print('parse-error |',e,'| - | -')
+          ")
+            echo "::notice title=Download probe: $label::HTTP $code :: $parsed"
+          }
+          probe "YouTube 360p h264"  '{"url":"https://www.youtube.com/watch?v=jNQXAC9IVRw","videoQuality":"360","downloadMode":"mute","youtubeVideoCodec":"h264"}'
+          probe "YouTube 144p vp9 proxy" '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","videoQuality":"144","youtubeVideoCodec":"vp9","alwaysProxy":true}'
+          probe "Vimeo"            '{"url":"https://vimeo.com/76979871","videoQuality":"360"}'
+          probe "SoundCloud audio" '{"url":"https://soundcloud.com/odesza/say-my-name-feat-zyra","downloadMode":"audio","audioFormat":"mp3"}'
+          probe "Dailymotion"      '{"url":"https://www.dailymotion.com/video/x7tgah0","videoQuality":"360"}'
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Real download probes: see the run annotations for per-service results." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build static site
         run: |
