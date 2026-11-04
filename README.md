@@ -28,11 +28,14 @@ Repo → **Settings → Pages → Source = `GitHub Actions`** set kiya gaya. Usk
 | `GET /` instance info | ✅ Cobalt **v11.7.1**, **21 services** |
 | `Access-Control-Allow-Origin` | ✅ `*` — browser kisi bhi origin se seedha call kar sakta hai, relay ki zarurat nahi |
 | `POST /` processing endpoint | ✅ valid Cobalt JSON (`error.api.link.invalid` invalid test link par expected) |
-| Real download — Vimeo | ✅ HTTP 200, `status: redirect`, filename `The New Vimeo Player (You Know, For Videos) - Vimeo (360p).mp4` + asli file URL |
+| Real download — Vimeo | ✅ HTTP 200, `status: redirect` **aur** `alwaysProxy` ke saath `status: tunnel`; dono mein asli filename + file URL mila |
 | Browser se live site | ✅ `https://sanjeettiwari1299-eng.github.io/youtyers/` khul kar khud instance se v11.7.1 / 21 services load karta hai |
-| YouTube | ⚠️ is instance par `error.api.fetch.fail` — Cobalt instance ko YouTube ke liye cookies / session server chahiye (site ka code nahi, instance-side baat hai) |
+| File bytes fetch (CI runner se) | ⚠️ HTTP 403 — GitHub Actions ke egress IP har request par badalte hain, aur Cobalt tunnel token / Vimeo signed URL IP-bound hote hain. Ek normal browser (stable IP) mein ye link chalte hain; isliye site mein **Cobalt tunnel** default ON hai |
+| YouTube | ⚠️ is instance par `error.api.fetch.fail` — Cobalt instance ko YouTube ke liye `cookies.json` / `YOUTUBE_SESSION_SERVER` chahiye (site ka code nahi, instance-side baat hai) |
 
-Matlab download pipeline kaam kar raha hai (Vimeo se proof). YouTube ke liye ya to instance mein `cookies.json` / `YOUTUBE_SESSION_SERVER` configure karo, ya site ke ⚙️ Settings mein kisi doosre Cobalt instance ka URL daal do — UI bilkul same chalega.
+Matlab site + Cobalt pipeline kaam kar rahe hain; asli `tunnel` / `redirect` file links ban rahe hain. YouTube ke liye ya to instance configure karo, ya site ke ⚙️ **Settings** mein kisi doosre Cobalt instance ka URL daal do — UI bilkul same chalega (`?api=` query se bhi).
+
+Har push par halka smoke test chalta hai; 6-service download probe **Actions → Run workflow** (manual dispatch) par chalta hai.
 
 ## Local chalana
 

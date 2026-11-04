@@ -55,8 +55,9 @@ jobs:
           cat /tmp/summary.md
           cat /tmp/summary.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: End-to-end download probes (multiple services)
+      - name: End-to-end download probes (manual runs only)
         id: dlprobe
+        if: github.event_name == 'workflow_dispatch'
         continue-on-error: true
         env:
           COBALT_API: https://youtyers-528be.containers.snapdeploy.app/
